@@ -73,5 +73,5 @@ predictions$shot_id <- data_test$shot_id
 kobe_final <- predictions %>%
   select(c(shot_id, shot_made_flag))
 
-write.csv(kobe_final, "./STAT\ 348/FinalProject/rfclassification.csv", row.names = F)
+write.csv(kobe_final, "./rfclassification.csv", row.names = F)
 
