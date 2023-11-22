@@ -28,7 +28,7 @@ data_train_final$action_type <- factor(data_train_final$action_type, levels = al
 data_test$action_type <- factor(data_test$action_type, levels = all_levels)
 
 recipe <- recipe(shot_made_flag ~ ., data=data_train_final) %>%
-  step_mutate_at(all_numeric_predictors(), fn=factor) %>%
+  step_mutate_at(c(playoffs, period), fn=factor) %>%
   step_dummy(all_nominal_predictors())
 
 prep <- prep(recipe)
