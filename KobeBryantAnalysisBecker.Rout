@@ -56,7 +56,7 @@ The following objects are masked from ‘package:readr’:
 ✖ dplyr::lag()      masks stats::lag()
 ✖ yardstick::spec() masks vroom::spec(), readr::spec()
 ✖ recipes::step()   masks stats::step()
-• Use suppressPackageStartupMessages() to eliminate package startup messages
+• Search for functions across packages at https://www.tidymodels.org/find/
 > library(embed)
 > library(discrim)
 
@@ -116,7 +116,7 @@ date  (1): game_date
 > 
 > rf_model <- rand_forest(mtry = tune(),
 +                         min_n = tune(),
-+                         trees=500) %>%
++                         trees=800) %>%
 +   set_engine("ranger") %>%
 +   set_mode("classification")
 > 
@@ -134,10 +134,10 @@ date  (1): game_date
 > # Set up grid of tuning values
 > tuning_grid <- grid_regular(mtry(range=c(1,(ncol(data_clean_NA) - 1))),
 +                             min_n(),
-+                             levels = 3) ## L^2 total tuning possibilities
++                             levels = 5) ## L^2 total tuning possibilities
 > 
 > # Set up K-fold CV
-> folds <- vfold_cv(data_clean_NA, v = 3, repeats=1)
+> folds <- vfold_cv(data_clean_NA, v = 5, repeats=1)
 > 
 > CV_results <- kobe_wf %>%
 +   tune_grid(resamples=folds,
@@ -167,5 +167,5 @@ boundary (singular) fit: see help('isSingular')
 > 
 > 
 > proc.time()
-   user  system elapsed 
-636.926  10.112 556.484 
+    user   system  elapsed 
+4939.623   65.380 4605.839 
