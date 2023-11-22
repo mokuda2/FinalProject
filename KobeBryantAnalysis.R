@@ -11,20 +11,30 @@ library(themis)
 data <- vroom("./STAT 348/FinalProject/data.csv")
 data$shot_made_flag <- factor(data$shot_made_flag)
 data_clean <- data[1:500, ] %>%
-  select(-c(team_id, team_name, matchup, season, game_date, playoffs))
+  select(-c(combined_shot_type, team_id, team_name, matchup, season, playoffs, game_id, period, lat, lon, shot_zone_range, game_date))
 data_clean_NA <- data_clean %>%
   filter(!is.na(shot_made_flag))
 
-view(data_clean)
-data_test <- data_clean %>%
+data_test <- data_clean_NA %>%
   filter(is.na(shot_made_flag))
 
-recipe <- recipe(shot_made_flag ~ ., data=data_clean_NA) %>%
-  step_mutate_at(all_nominal_predictors(), fn=factor) %>%
-  step_lencode_mixed(all_nominal_predictors(), outcome=vars(shot_made_flag))
+data_clean_final <- data_clean_NA %>%
+  select(-c(shot_id))
+
+view(cor(data_clean_final[, sapply(data_clean_final, is.numeric)]))
+table(data$game_event_id)
+table(data$lat)
+view(data)
+view(data_clean)
+
+recipe <- recipe(shot_made_flag ~ ., data=data_clean_final) %>%
+  step_mutate_at(game_event_id, fn=factor) %>%
+  step_lencode_mixed(all_nominal_predictors(), outcome=vars(shot_made_flag)) %>%
+  step_dummy(all_nominal_predictors())
 
 prep <- prep(recipe)
-bake <- bake(prep, new_data=data_clean_NA)
+bake <- bake(prep, new_data=data_clean_final)
+# view(cor(bake[, sapply(bake, is.numeric)]))
 
 rf_model <- rand_forest(mtry = tune(),
                         min_n = tune(),
@@ -44,12 +54,12 @@ kobe_wf <- workflow() %>%
   add_model(rf_model)
 
 # Set up grid of tuning values
-tuning_grid <- grid_regular(mtry(range=c(1,(ncol(data_clean_NA) - 1))),
+tuning_grid <- grid_regular(mtry(range=c(1,(ncol(data_clean_final) - 1))),
                             min_n(),
                             levels = 3) ## L^2 total tuning possibilities
 
 # Set up K-fold CV
-folds <- vfold_cv(data_clean_NA, v = 3, repeats=1)
+folds <- vfold_cv(data_clean_final, v = 3, repeats=1)
 
 CV_results <- kobe_wf %>%
   tune_grid(resamples=folds,

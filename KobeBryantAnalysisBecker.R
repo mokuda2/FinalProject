@@ -11,13 +11,15 @@ library(themis)
 data <- vroom("./data.csv")
 data$shot_made_flag <- factor(data$shot_made_flag)
 data_clean <- data %>%
-  select(-c(team_id, team_name, matchup, season, game_date, playoffs))
+  select(-c(combined_shot_type, team_id, team_name, matchup, season, playoffs, game_id, period, lat, lon, shot_zone_range, game_date))
 data_clean_NA <- data_clean %>%
   filter(!is.na(shot_made_flag))
 
-view(data_clean)
-data_test <- data_clean %>%
+data_test <- data_clean_NA %>%
   filter(is.na(shot_made_flag))
+
+data_clean_final <- data_clean_NA %>%
+  select(-c(shot_id))
 
 recipe <- recipe(shot_made_flag ~ ., data=data_clean_NA) %>%
   step_mutate_at(all_nominal_predictors(), fn=factor) %>%
