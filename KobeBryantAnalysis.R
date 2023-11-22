@@ -12,7 +12,7 @@ library(bonsai)
 
 data <- vroom("./STAT 348/FinalProject/data.csv")
 data$shot_made_flag <- factor(data$shot_made_flag)
-data$time_remaining <- 48 - data$period + data$minutes_remaining
+data$time_remaining <- 48 - data$period * 12 + data$minutes_remaining
 
 data_train <- data[c("action_type", "shot_type", "shot_zone_area", "playoffs", "period", "time_remaining", "shot_made_flag")]
 
