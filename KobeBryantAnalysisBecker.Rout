@@ -1,0 +1,171 @@
+
+R version 4.3.2 (2023-10-31) -- "Eye Holes"
+Copyright (C) 2023 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> library(tidyverse)
+── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
+✔ dplyr     1.1.3     ✔ readr     2.1.4
+✔ forcats   1.0.0     ✔ stringr   1.5.0
+✔ ggplot2   3.4.4     ✔ tibble    3.2.1
+✔ lubridate 1.9.3     ✔ tidyr     1.3.0
+✔ purrr     1.0.2     
+── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+✖ dplyr::filter() masks stats::filter()
+✖ dplyr::lag()    masks stats::lag()
+ℹ Use the conflicted package (<http://conflicted.r-lib.org/>) to force all conflicts to become errors
+> library(vroom)
+
+Attaching package: ‘vroom’
+
+The following objects are masked from ‘package:readr’:
+
+    as.col_spec, col_character, col_date, col_datetime, col_double,
+    col_factor, col_guess, col_integer, col_logical, col_number,
+    col_skip, col_time, cols, cols_condense, cols_only, date_names,
+    date_names_lang, date_names_langs, default_locale, fwf_cols,
+    fwf_empty, fwf_positions, fwf_widths, locale, output_column,
+    problems, spec
+
+> library(tidymodels)
+── Attaching packages ────────────────────────────────────── tidymodels 1.1.1 ──
+✔ broom        1.0.5     ✔ rsample      1.2.0
+✔ dials        1.2.0     ✔ tune         1.1.2
+✔ infer        1.0.5     ✔ workflows    1.1.3
+✔ modeldata    1.2.0     ✔ workflowsets 1.0.1
+✔ parsnip      1.1.1     ✔ yardstick    1.2.0
+✔ recipes      1.0.8     
+── Conflicts ───────────────────────────────────────── tidymodels_conflicts() ──
+✖ scales::discard() masks purrr::discard()
+✖ dplyr::filter()   masks stats::filter()
+✖ recipes::fixed()  masks stringr::fixed()
+✖ dplyr::lag()      masks stats::lag()
+✖ yardstick::spec() masks vroom::spec(), readr::spec()
+✖ recipes::step()   masks stats::step()
+• Use suppressPackageStartupMessages() to eliminate package startup messages
+> library(embed)
+> library(discrim)
+
+Attaching package: ‘discrim’
+
+The following object is masked from ‘package:dials’:
+
+    smoothness
+
+> library(naivebayes)
+naivebayes 0.9.7 loaded
+> library(kknn)
+> library(kernlab)
+
+Attaching package: ‘kernlab’
+
+The following object is masked from ‘package:scales’:
+
+    alpha
+
+The following object is masked from ‘package:purrr’:
+
+    cross
+
+The following object is masked from ‘package:ggplot2’:
+
+    alpha
+
+> library(themis)
+> 
+> data <- vroom("./data.csv")
+Rows: 30697 Columns: 25
+── Column specification ────────────────────────────────────────────────────────
+Delimiter: ","
+chr  (10): action_type, combined_shot_type, season, shot_type, shot_zone_are...
+dbl  (14): game_event_id, game_id, lat, loc_x, loc_y, lon, minutes_remaining...
+date  (1): game_date
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+> data$shot_made_flag <- factor(data$shot_made_flag)
+> data_clean <- data %>%
++   select(-c(team_id, team_name, matchup, season, game_date, playoffs))
+> data_clean_NA <- data_clean %>%
++   filter(!is.na(shot_made_flag))
+> 
+> view(data_clean)
+> data_test <- data_clean %>%
++   filter(is.na(shot_made_flag))
+> 
+> recipe <- recipe(shot_made_flag ~ ., data=data_clean_NA) %>%
++   step_mutate_at(all_nominal_predictors(), fn=factor) %>%
++   step_lencode_mixed(all_nominal_predictors(), outcome=vars(shot_made_flag))
+> 
+> prep <- prep(recipe)
+> bake <- bake(prep, new_data=data_clean_NA)
+> 
+> rf_model <- rand_forest(mtry = tune(),
++                         min_n = tune(),
++                         trees=500) %>%
++   set_engine("ranger") %>%
++   set_mode("classification")
+> 
+> # Create a workflow with model & recipe
+> # target_encoding_amazon_recipe <- recipe(ACTION~., data=amazon_train) %>%
+> #   step_mutate_at(all_numeric_predictors(), fn=factor) %>%
+> #   step_lencode_mixed(all_nominal_predictors(), outcome=vars(ACTION))
+> # prep <- prep(target_encoding_amazon_recipe)
+> # baked_train <- bake(prep, new_data = amazon_train)
+> 
+> kobe_wf <- workflow() %>%
++   add_recipe(recipe) %>%
++   add_model(rf_model)
+> 
+> # Set up grid of tuning values
+> tuning_grid <- grid_regular(mtry(range=c(1,(ncol(data_clean_NA) - 1))),
++                             min_n(),
++                             levels = 3) ## L^2 total tuning possibilities
+> 
+> # Set up K-fold CV
+> folds <- vfold_cv(data_clean_NA, v = 3, repeats=1)
+> 
+> CV_results <- kobe_wf %>%
++   tune_grid(resamples=folds,
++             grid=tuning_grid,
++             metrics=metric_set(roc_auc)) #Or leave metrics NULL
+boundary (singular) fit: see help('isSingular')
+boundary (singular) fit: see help('isSingular')
+> 
+> # Find best tuning parameters
+> bestTune <- CV_results %>%
++   select_best("roc_auc")
+> 
+> # Finalize workflow and predict
+> final_wf <- kobe_wf %>%
++   finalize_workflow(bestTune) %>%
++   fit(data=data_clean_NA)
+> 
+> predictions <- final_wf %>%
++   predict(new_data = data_test, type="prob")
+> 
+> predictions$shot_made_flag <- predictions$.pred_0
+> predictions$shot_id <- data_test$shot_id
+> kobe_final <- predictions %>%
++   select(c(shot_id, shot_made_flag))
+> 
+> write.csv(kobe_final, "./rfclassification.csv", row.names = F)
+> 
+> 
+> proc.time()
+   user  system elapsed 
+636.926  10.112 556.484 
