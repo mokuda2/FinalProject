@@ -8,7 +8,7 @@ library(kknn)
 library(kernlab)
 library(themis)
 
-data <- vroom("./STAT 348/FinalProject/data.csv")
+data <- vroom("./data.csv")
 data$shot_made_flag <- factor(data$shot_made_flag)
 data <- data %>%
   select(-c(team_id, team_name, matchup))
