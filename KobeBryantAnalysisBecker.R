@@ -6,8 +6,6 @@ library(discrim)
 library(naivebayes)
 library(kknn)
 library(kernlab)
-library(themis)
-library(bonsai)
 
 data <- vroom("./data.csv")
 data$shot_made_flag <- factor(data$shot_made_flag)
