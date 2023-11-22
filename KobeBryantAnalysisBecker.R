@@ -28,7 +28,7 @@ bake <- bake(prep, new_data=data_clean_NA)
 
 rf_model <- rand_forest(mtry = tune(),
                         min_n = tune(),
-                        trees=500) %>%
+                        trees=800) %>%
   set_engine("ranger") %>%
   set_mode("classification")
 
@@ -46,10 +46,10 @@ kobe_wf <- workflow() %>%
 # Set up grid of tuning values
 tuning_grid <- grid_regular(mtry(range=c(1,(ncol(data_clean_NA) - 1))),
                             min_n(),
-                            levels = 3) ## L^2 total tuning possibilities
+                            levels = 5) ## L^2 total tuning possibilities
 
 # Set up K-fold CV
-folds <- vfold_cv(data_clean_NA, v = 3, repeats=1)
+folds <- vfold_cv(data_clean_NA, v = 5, repeats=1)
 
 CV_results <- kobe_wf %>%
   tune_grid(resamples=folds,
