@@ -14,14 +14,18 @@ data <- vroom("./STAT 348/FinalProject/data.csv")
 data$shot_made_flag <- factor(data$shot_made_flag)
 data$time_remaining <- 48 - data$period * 12 + data$minutes_remaining
 
-data_train <- data[c("action_type", "shot_type", "shot_zone_area", "playoffs", "period", "time_remaining", "shot_made_flag")]
+numeric_data <- data[, sapply(data, is.numeric)]
+correlation_matrix <- cor(numeric_data)
+correlation_matrix
+
+data_train <- data[c("action_type", "shot_type", "shot_zone_area", "playoffs", "period", "time_remaining", "shot_made_flag", "lat", "lon")]
 
 data_train_final <- data_train %>%
   filter(!is.na(shot_made_flag))
   
 data_test <- data %>%
   filter(is.na(shot_made_flag)) %>%
-  select(c("action_type", "shot_type", "shot_zone_area", "playoffs", "period", "time_remaining", "shot_made_flag", "shot_id"))
+  select(c("action_type", "shot_type", "shot_zone_area", "playoffs", "period", "time_remaining", "shot_made_flag", "shot_id", "lat", "lon"))
 
 all_levels <- unique(c(data_train$action_type, data_test$action_type))
 data_train_final$action_type <- factor(data_train_final$action_type, levels = all_levels)
