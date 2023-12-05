@@ -89,14 +89,14 @@ data <- data %>%
   ))
 
 data_train <- data %>%
-  select(c("action_type", "shot_type", "shot_zone_area", "playoffs", "period", "time_remaining", "loc_r", "loc_theta", "home", "away", "lastminutes", "game_num", "first_team", "scoring_leader", "num_rings", "mvp", "finals_mvp", "postachilles", "shot_made_flag"))
+  select(c("action_type", "shot_type", "shot_zone_area", "playoffs", "period", "time_remaining", "loc_r", "loc_theta", "home", "away", "lastminutes", "game_num", "first_team", "scoring_leader", "num_rings", "mvp", "finals_mvp", "postachilles", "matchup", "shot_made_flag"))
 
 data_train_final <- data_train %>%
   filter(!is.na(shot_made_flag))
 
 data_test <- data %>%
   filter(is.na(shot_made_flag)) %>%
-  select(c("action_type", "shot_type", "shot_zone_area", "playoffs", "period", "time_remaining", "loc_r", "loc_theta", "home", "away", "lastminutes", "game_num", "first_team", "scoring_leader", "num_rings", "mvp", "finals_mvp", "postachilles", "shot_made_flag", "shot_id"))
+  select(c("action_type", "shot_type", "shot_zone_area", "playoffs", "period", "time_remaining", "loc_r", "loc_theta", "home", "away", "lastminutes", "game_num", "first_team", "scoring_leader", "num_rings", "mvp", "finals_mvp", "postachilles", "matchup", "shot_made_flag", "shot_id"))
 
 all_levels <- unique(c(data_train_final$action_type, data_test$action_type))
 data_train_final$action_type <- factor(data_train_final$action_type, levels = all_levels)
