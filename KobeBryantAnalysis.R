@@ -117,11 +117,13 @@ data_test$action_type <- factor(data_test$action_type, levels = all_levels)
 
 recipe <- recipe(shot_made_flag ~ ., data=data_train_final) %>%
   step_mutate_at(c(playoffs, period), fn=factor) %>%
-  step_dummy(all_nominal_predictors())
+  step_dummy(all_nominal_predictors()) %>%
+  step_normalize()
 
 prep <- prep(recipe)
 bake <- bake(prep, new_data=data_train_final)
 
+## random forest
 rf_model <- rand_forest(mtry = tune(),
                         min_n = tune(),
                         trees=800) %>%
@@ -164,34 +166,32 @@ kobe_final <- predictions %>%
 
 write.csv(kobe_final, "./STAT\ 348/FinalProject/rfclassification.csv", row.names = F)
 
-## naive bayes
-nb_model <- naive_Bayes(Laplace=tune(), smoothness=tune()) %>%
+## knn
+knn_model <- nearest_neighbor(neighbors=tune()) %>% # set or tune
   set_mode("classification") %>%
-  set_engine("naivebayes") # install discrim library for the naivebayes eng
+  set_engine("kknn")
 
-nb_wf <- workflow() %>%
+knn_wf <- workflow() %>%
   add_recipe(recipe) %>%
-  add_model(nb_model)
+  add_model(knn_model)
 
-# Tune smoothness and Laplace here
-tuning_grid3 <- grid_regular(Laplace(),
-                            smoothness(),
+# Fit or Tune Model HERE
+tuning_grid3 <- grid_regular(neighbors(),
                             levels = 5) ## L^2 total tuning possibilities
 
-# Set up K-fold CV
 folds3 <- vfold_cv(data_train_final, v = 5, repeats=1)
 
-CV_results3 <- nb_wf %>%
+CV_results3 <- knn_wf %>%
   tune_grid(resamples=folds3,
             grid=tuning_grid3,
-            metrics=metric_set(roc_auc)) #Or leave metrics NULL
+            metrics=metric_set(roc_auc))
 
 # Predict
 bestTune3 <- CV_results3 %>%
   select_best("roc_auc")
 
 # Finalize workflow and predict
-final_wf3 <- nb_wf %>%
+final_wf3 <- knn_wf %>%
   finalize_workflow(bestTune3) %>%
   fit(data=data_train_final)
 
@@ -200,10 +200,10 @@ predictions3 <- final_wf3 %>%
 
 predictions3$shot_made_flag <- predictions3$.pred_1
 predictions3$shot_id <- data_test$shot_id
-naive_bayes_final <- predictions3 %>%
+knn_final <- predictions3 %>%
   select(c(shot_id, shot_made_flag))
 
-write.csv(naive_bayes_final, "./STAT\ 348/FinalProject/naivebayes.csv", row.names = F)
+write.csv(knn_final, "./STAT\ 348/FinalProject/knn.csv", row.names = F)
 
 ## xgboost
 boost_model <- boost_tree(tree_depth=tune(),
