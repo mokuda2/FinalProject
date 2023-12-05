@@ -7,7 +7,6 @@ library(naivebayes)
 library(kknn)
 library(kernlab)
 library(themis)
-library(bonsai)
 
 data <- vroom("./STAT 348/FinalProject/data.csv")
 data$shot_made_flag <- factor(data$shot_made_flag)
@@ -53,6 +52,12 @@ data[data$game_num >= 494 & data$game_num <= 1116,]$num_rings <- 3
 data[data$game_num >= 1117 & data$game_num <= 1212,]$num_rings <- 4 
 data[data$game_num >= 1213 & data$game_num <= 1559,]$num_rings <- 5
 
+data$mvp <- ifelse(data$game_num >= 909 & data$game_num <= 990, 1, 0)
+data$finals_mvp <- ifelse((data$game_num >= 1112 & data$game_num <= 1116) | 
+                             (data$game_num >= 1206 & data$game_num <= 1212), 
+                           1, 0)
+data$postachilles <- ifelse(data$game_num > 1452, 1, 0)
+
 # data <- data %>%
 #   mutate(away = grepl("@", matchup))
 
@@ -95,14 +100,14 @@ data[data$game_num >= 1213 & data$game_num <= 1559,]$num_rings <- 5
 #   ))
 
 data_train <- data %>%
-  select(c("action_type", "shot_type", "shot_zone_area", "playoffs", "period", "time_remaining", "loc_r", "loc_theta", "home", "away", "lastminutes", "game_num", "first_team", "scoring_leader", "num_rings", "shot_made_flag"))
+  select(c("action_type", "shot_type", "shot_zone_area", "playoffs", "period", "time_remaining", "loc_r", "loc_theta", "home", "away", "lastminutes", "game_num", "first_team", "scoring_leader", "num_rings", "mvp", "finals_mvp", "postachilles", "shot_made_flag"))
 
 data_train_final <- data_train %>%
   filter(!is.na(shot_made_flag))
   
 data_test <- data %>%
   filter(is.na(shot_made_flag)) %>%
-  select(c("action_type", "shot_type", "shot_zone_area", "playoffs", "period", "time_remaining", "shot_made_flag", "loc_r", "loc_theta", "home", "away", "lastminutes", "game_num", "first_team", "scoring_leader", "num_rings", "shot_id"))
+  select(c("action_type", "shot_type", "shot_zone_area", "playoffs", "period", "time_remaining", "loc_r", "loc_theta", "home", "away", "lastminutes", "game_num", "first_team", "scoring_leader", "num_rings", "mvp", "finals_mvp", "postachilles", "shot_made_flag", "shot_id"))
 
 all_levels <- unique(c(data_train_final$action_type, data_test$action_type))
 data_train_final$action_type <- factor(data_train_final$action_type, levels = all_levels)
