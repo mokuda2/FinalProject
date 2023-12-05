@@ -5,6 +5,7 @@ library(embed)
 library(discrim)
 library(naivebayes)
 library(kknn)
+library(lightgbm)
 library(kernlab)
 library(themis)
 

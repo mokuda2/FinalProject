@@ -6,6 +6,7 @@ library(discrim)
 library(naivebayes)
 library(kknn)
 library(kernlab)
+library(lightgbm)
 library(themis)
 
 data <- vroom("./STAT 348/FinalProject/data.csv")
