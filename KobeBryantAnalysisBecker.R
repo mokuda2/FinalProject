@@ -10,7 +10,7 @@ library(themis)
 
 data <- vroom("./data.csv")
 data$shot_made_flag <- factor(data$shot_made_flag)
-data$time_remaining <- 48 - data$period * 12 + data$minutes_remaining
+shots$time_remaining <- (shots$minutes_remaining * 60) + shots$seconds_remaining
 data$lastminutes <- ifelse(data$time_remaining <= 180, 1, 0)
 data$game_num <- as.numeric(data$game_date)
 
@@ -50,53 +50,16 @@ data$finals_mvp <- ifelse((data$game_num >= 1112 & data$game_num <= 1116) |
                             (data$game_num >= 1206 & data$game_num <= 1212), 
                           1, 0)
 data$postachilles <- ifelse(data$game_num > 1452, 1, 0)
-data <- data %>%
-  mutate(matchup = case_when(
-    matchup == "LAL @ ATL" ~ 3111.71,
-    matchup == "LAL @ BKN" ~ 3940.98,
-    matchup == "LAL @ BOS" ~ 4171.64,
-    matchup == "LAL @ CHA" ~ 3406.51,
-    matchup == "LAL @ CHH" ~ 3406.51,
-    matchup == "LAL @ CHI" ~ 2802.76,
-    matchup == "LAL @ CLE" ~ 3293.8,
-    matchup == "LAL @ DAL" ~ 1992.7,
-    matchup == "LAL @ DEN" ~ 1336.99,
-    matchup == "LAL @ DET" ~ 3187.13,
-    matchup == "LAL @ GSW" ~ 556.05,
-    matchup == "LAL @ HOU" ~ 2209.31,
-    matchup == "LAL @ IND" ~ 2908.74,
-    matchup == "LAL @ LAC" ~ 0,
-    matchup == "LAL @ MEM" ~ 2577.17,
-    matchup == "LAL @ MIA" ~ 3760.32,
-    matchup == "LAL @ MIL" ~ 2804.07,
-    matchup == "LAL @ MIN" ~ 2450.08,
-    matchup == "LAL @ NJN" ~ 3941,
-    matchup == "LAL @ NOH" ~ 2687.88,
-    matchup == "LAL @ NOP" ~ 2687.88,
-    matchup == "LAL @ NYK" ~ 3938.9,
-    matchup == "LAL @ OKC" ~ 1898.97,
-    matchup == "LAL @ ORL" ~ 3538.33,
-    matchup == "LAL @ PHI" ~ 3845.69,
-    matchup == "LAL @ PHX" ~ 576.62,
-    matchup == "LAL @ POR" ~ 1331.11,
-    matchup == "LAL @ SAC" ~ 581.69,
-    matchup == "LAL @ SAS" ~ 1940.71,
-    matchup == "LAL @ SEA" ~ 1898.99,
-    matchup == "LAL @ TOR" ~ 3497.01,
-    matchup == "LAL @ UTA" ~ 935.07,
-    matchup == "LAL @ VAN" ~ 3695.84,
-    matchup == "LAL @ WAS" ~ 3695.84
-  ))
 
 data_train <- data %>%
-  select(c("action_type", "shot_type", "shot_zone_area", "playoffs", "period", "time_remaining", "loc_r", "loc_theta", "home", "away", "lastminutes", "game_num", "first_team", "scoring_leader", "num_rings", "mvp", "finals_mvp", "postachilles", "matchup", "shot_made_flag"))
+  select(c("action_type", "shot_type", "shot_zone_area", "playoffs", "period", "time_remaining", "loc_r", "loc_theta", "home", "away", "lastminutes", "game_num", "first_team", "scoring_leader", "num_rings", "mvp", "finals_mvp", "postachilles", "shot_made_flag"))
 
 data_train_final <- data_train %>%
   filter(!is.na(shot_made_flag))
 
 data_test <- data %>%
   filter(is.na(shot_made_flag)) %>%
-  select(c("action_type", "shot_type", "shot_zone_area", "playoffs", "period", "time_remaining", "loc_r", "loc_theta", "home", "away", "lastminutes", "game_num", "first_team", "scoring_leader", "num_rings", "mvp", "finals_mvp", "postachilles", "matchup", "shot_made_flag", "shot_id"))
+  select(c("action_type", "shot_type", "shot_zone_area", "playoffs", "period", "time_remaining", "loc_r", "loc_theta", "home", "away", "lastminutes", "game_num", "first_team", "scoring_leader", "num_rings", "mvp", "finals_mvp", "postachilles", "shot_made_flag", "shot_id"))
 
 all_levels <- unique(c(data_train_final$action_type, data_test$action_type))
 data_train_final$action_type <- factor(data_train_final$action_type, levels = all_levels)
