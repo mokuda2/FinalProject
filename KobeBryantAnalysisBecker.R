@@ -10,7 +10,7 @@ library(themis)
 
 data <- vroom("./data.csv")
 data$shot_made_flag <- factor(data$shot_made_flag)
-shots$time_remaining <- (shots$minutes_remaining * 60) + shots$seconds_remaining
+data$time_remaining <- (data$minutes_remaining * 60) + data$seconds_remaining
 data$lastminutes <- ifelse(data$time_remaining <= 180, 1, 0)
 data$game_num <- as.numeric(data$game_date)
 
