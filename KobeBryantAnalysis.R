@@ -10,118 +10,43 @@ library(parsnip)
 library(themis)
 library(bonsai)
 
-data <- vroom("./STAT 348/FinalProject/data.csv")
-data$shot_made_flag <- factor(data$shot_made_flag)
-data$time_remaining <- 48 - data$period * 12 + data$minutes_remaining
-data$lastminutes <- ifelse(data$time_remaining <= 180, 1, 0)
-data$game_num <- as.numeric(data$game_date)
-
-data$first_team <- ifelse((data$game_num >= 395 & data$game_num <= 474) | 
-                             (data$game_num >= 494 & data$game_num <= 575) | 
-                             (data$game_num >= 588 & data$game_num <= 651) | 
-                             (data$game_num >= 740 & data$game_num <= 819) | 
-                             (data$game_num >= 827 & data$game_num <= 903) | 
-                             (data$game_num >= 909 & data$game_num <= 990) | 
-                             (data$game_num >= 1012 & data$game_num <= 1093) | 
-                             (data$game_num >= 1117 & data$game_num <= 1189) | 
-                             (data$game_num >= 1213 & data$game_num <= 1294) | 
-                             (data$game_num >= 1305 & data$game_num <= 1362) | 
-                             (data$game_num >= 1375 & data$game_num <= 1452), 
-                           1, 0)
-data$scoring_leader <- ifelse((data$game_num >= 740 & data$game_num <= 819) | 
-                                 (data$game_num >= 827 & data$game_num <= 903), 
-                               1, 0)
-
-# numeric_data <- data[, sapply(data, is.numeric)]
-# correlation_matrix <- cor(numeric_data)
-# correlation_matrix
-
-# home vs. away
-
-# feet to polar coordinates
-data <- data %>%
-  select(-c(team_name))
-data$loc_r <- sqrt((data$loc_x)^2 + (data$loc_y)^2)
-data$loc_theta <- atan(data$loc_y/data$loc_x)
-data$loc_theta[is.na(data$loc_theta)] <- pi/2
-
-data$home <- as.numeric(grepl("vs.", data$matchup, fixed = TRUE))
-data$away <- as.numeric(grepl("@", data$matchup, fixed = TRUE))
-data$num_rings <- 0
-data[data$game_num >= 311 & data$game_num <= 394,]$num_rings <- 1 
-data[data$game_num >= 395 & data$game_num <= 493,]$num_rings <- 2 
-data[data$game_num >= 494 & data$game_num <= 1116,]$num_rings <- 3 
-data[data$game_num >= 1117 & data$game_num <= 1212,]$num_rings <- 4 
-data[data$game_num >= 1213 & data$game_num <= 1559,]$num_rings <- 5
-
-data$mvp <- ifelse(data$game_num >= 909 & data$game_num <= 990, 1, 0)
-data$finals_mvp <- ifelse((data$game_num >= 1112 & data$game_num <= 1116) | 
-                             (data$game_num >= 1206 & data$game_num <= 1212), 
-                           1, 0)
-data$postachilles <- ifelse(data$game_num > 1452, 1, 0)
-
-# data <- data %>%
-#   mutate(away = grepl("@", matchup))
-
-# data <- data %>%
-#   mutate(matchup = case_when(
-#     matchup == "LAL @ ATL" ~ 3111.71,
-#     matchup == "LAL @ BKN" ~ 3940.98,
-#     matchup == "LAL @ BOS" ~ 4171.64,
-#     matchup == "LAL @ CHA" ~ 3406.51,
-#     matchup == "LAL @ CHH" ~ 3406.51,
-#     matchup == "LAL @ CHI" ~ 2802.76,
-#     matchup == "LAL @ CLE" ~ 3293.8,
-#     matchup == "LAL @ DAL" ~ 1992.7,
-#     matchup == "LAL @ DEN" ~ 1336.99,
-#     matchup == "LAL @ DET" ~ 3187.13,
-#     matchup == "LAL @ GSW" ~ 556.05,
-#     matchup == "LAL @ HOU" ~ 2209.31,
-#     matchup == "LAL @ IND" ~ 2908.74,
-#     matchup == "LAL @ LAC" ~ 0,
-#     matchup == "LAL @ MEM" ~ 2577.17,
-#     matchup == "LAL @ MIA" ~ 3760.32,
-#     matchup == "LAL @ MIL" ~ 2804.07,
-#     matchup == "LAL @ MIN" ~ 2450.08,
-#     matchup == "LAL @ NJN" ~ 3941,
-#     matchup == "LAL @ NOH" ~ 2687.88,
-#     matchup == "LAL @ NOP" ~ 2687.88,
-#     matchup == "LAL @ NYK" ~ 3938.9,
-#     matchup == "LAL @ OKC" ~ 1898.97,
-#     matchup == "LAL @ ORL" ~ 3538.33,
-#     matchup == "LAL @ PHI" ~ 3845.69,
-#     matchup == "LAL @ PHX" ~ 576.62,
-#     matchup == "LAL @ POR" ~ 1331.11,
-#     matchup == "LAL @ SAC" ~ 581.69,
-#     matchup == "LAL @ SAS" ~ 1940.71,
-#     matchup == "LAL @ SEA" ~ 1898.99,
-#     matchup == "LAL @ TOR" ~ 3497.01,
-#     matchup == "LAL @ UTA" ~ 935.07,
-#     matchup == "LAL @ VAN" ~ 3695.84,
-#     matchup == "LAL @ WAS" ~ 3695.84
-#   ))
-
-data_train <- data %>%
-  select(c("action_type", "shot_type", "shot_zone_area", "playoffs", "period", "time_remaining", "loc_r", "loc_theta", "home", "away", "lastminutes", "game_num", "first_team", "scoring_leader", "num_rings", "mvp", "finals_mvp", "postachilles", "shot_made_flag"))
-
-data_train_final <- data_train %>%
+kobe <- vroom("./STAT 348/FinalProject/data.csv")
+dist <- sqrt((kobe$loc_x/10)^2 + (kobe$loc_y/10)^2) 
+kobe$shot_distance <- dist
+#Creating angle column 
+loc_x_zero <- kobe$loc_x == 0
+kobe['angle'] <- rep(0,nrow(kobe))
+kobe$angle[!loc_x_zero] <- atan(kobe$loc_y[!loc_x_zero] / kobe$loc_x[!loc_x_zero])
+kobe$angle[loc_x_zero] <- pi / 2
+# Create one time variable 
+kobe$time_remaining = (kobe$minutes_remaining*60)+kobe$seconds_remaining
+# Home and Away
+kobe$matchup = ifelse(str_detect(kobe$matchup, 'vs.'), 'Home', 'Away')
+# Season
+kobe['season'] <- substr(str_split_fixed(kobe$season, '-',2)[,2],2,2)
+### period into a factor
+kobe$period <- as.factor(kobe$period)
+# delete columns
+kobe <- kobe %>%
+  select(-c('shot_id', 'team_id', 'team_name', 'shot_zone_range', 'lon', 'lat', 
+            'seconds_remaining', 'minutes_remaining', 'game_event_id', 
+            'game_id', 'game_date','shot_zone_area',
+            'shot_zone_basic', 'loc_x', 'loc_y'))
+# Train
+train <- kobe %>%
   filter(!is.na(shot_made_flag))
-  
-data_test <- data %>%
-  filter(is.na(shot_made_flag)) %>%
-  select(c("action_type", "shot_type", "shot_zone_area", "playoffs", "period", "time_remaining", "loc_r", "loc_theta", "home", "away", "lastminutes", "game_num", "first_team", "scoring_leader", "num_rings", "mvp", "finals_mvp", "postachilles", "shot_made_flag", "shot_id"))
-
-all_levels <- unique(c(data_train_final$action_type, data_test$action_type))
-data_train_final$action_type <- factor(data_train_final$action_type, levels = all_levels)
-data_test$action_type <- factor(data_test$action_type, levels = all_levels)
-
-recipe <- recipe(shot_made_flag ~ ., data=data_train_final) %>%
-  step_mutate_at(c(playoffs, period), fn=factor) %>%
-  step_dummy(all_nominal_predictors()) %>%
-  step_normalize()
+# Test 
+test <- kobe %>% 
+  filter(is.na(shot_made_flag))
+## Make the response variable into a factor 
+train$shot_made_flag <- as.factor(train$shot_made_flag)
+recipe <- recipe(shot_made_flag ~ ., data = train) %>% 
+  step_novel(all_nominal_predictors()) %>%
+  step_unknown(all_nominal_predictors()) %>%
+  step_dummy(all_nominal_predictors())
 
 prep <- prep(recipe)
-bake <- bake(prep, new_data=data_train_final)
+bake <- bake(prep, new_data=train)
 
 ## random forest
 rf_model <- rand_forest(mtry = tune(),
@@ -135,12 +60,12 @@ kobe_wf <- workflow() %>%
   add_model(rf_model)
 
 # Set up grid of tuning values
-tuning_grid <- grid_regular(mtry(range=c(1,(ncol(data_train_final) - 1))),
+tuning_grid <- grid_regular(mtry(range=c(1,(ncol(train) - 1))),
                             min_n(),
                             levels = 5) ## L^2 total tuning possibilities
 
 # Set up K-fold CV
-folds <- vfold_cv(data_train_final, v = 5, repeats=1)
+folds <- vfold_cv(train, v = 5, repeats=1)
 
 CV_results <- kobe_wf %>%
   tune_grid(resamples=folds,
@@ -154,13 +79,13 @@ bestTune <- CV_results %>%
 # Finalize workflow and predict
 final_wf <- kobe_wf %>%
   finalize_workflow(bestTune) %>%
-  fit(data=data_train_final)
+  fit(data=train)
 
 predictions <- final_wf %>%
-  predict(new_data = data_test, type="prob")
+  predict(new_data = test, type="prob")
 
 predictions$shot_made_flag <- predictions$.pred_1
-predictions$shot_id <- data_test$shot_id
+predictions$shot_id <- test$shot_id
 kobe_final <- predictions %>%
   select(c(shot_id, shot_made_flag))
 
@@ -179,7 +104,7 @@ knn_wf <- workflow() %>%
 tuning_grid3 <- grid_regular(neighbors(),
                             levels = 5) ## L^2 total tuning possibilities
 
-folds3 <- vfold_cv(data_train_final, v = 5, repeats=1)
+folds3 <- vfold_cv(train, v = 5, repeats=1)
 
 CV_results3 <- knn_wf %>%
   tune_grid(resamples=folds3,
@@ -193,13 +118,13 @@ bestTune3 <- CV_results3 %>%
 # Finalize workflow and predict
 final_wf3 <- knn_wf %>%
   finalize_workflow(bestTune3) %>%
-  fit(data=data_train_final)
+  fit(data=train)
 
 predictions3 <- final_wf3 %>%
-  predict(new_data = data_test, type="prob")
+  predict(new_data = test, type="prob")
 
 predictions3$shot_made_flag <- predictions3$.pred_1
-predictions3$shot_id <- data_test$shot_id
+predictions3$shot_id <- test$shot_id
 knn_final <- predictions3 %>%
   select(c(shot_id, shot_made_flag))
 
@@ -222,7 +147,7 @@ tuning_grid2 <- grid_regular(tree_depth(),
                              learn_rate(),
                              levels = 5) ## L^2 total tuning possibilities
 
-folds2 <- vfold_cv(data_train_final, v = 5, repeats=1)
+folds2 <- vfold_cv(train, v = 5, repeats=1)
 
 CV_results2 <- boost_wf %>%
   tune_grid(resamples=folds2,
@@ -236,13 +161,13 @@ bestTune2 <- CV_results2 %>%
 # Finalize workflow and predict
 final_wf2 <- boost_wf %>%
   finalize_workflow(bestTune2) %>%
-  fit(data=data_train_final)
+  fit(data=train)
 
 predictions2 <- final_wf2 %>%
-  predict(new_data = data_test, type="prob")
+  predict(new_data = test, type="prob")
 
 predictions2$shot_made_flag <- predictions2$.pred_1
-predictions2$shot_id <- data_test$shot_id
+predictions2$shot_id <- test$shot_id
 xgboost_final <- predictions2 %>%
   select(c(shot_id, shot_made_flag))
 
