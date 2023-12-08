@@ -84,8 +84,10 @@ final_wf <- kobe_wf %>%
 predictions <- final_wf %>%
   predict(new_data = test, type="prob")
 
+sample_submission <- vroom("./STAT 348/FinalProject/sample_submission.csv")
+
 predictions$shot_made_flag <- predictions$.pred_1
-predictions$shot_id <- test$shot_id
+predictions$shot_id <- sample_submission$shot_id
 kobe_final <- predictions %>%
   select(c(shot_id, shot_made_flag))
 
@@ -129,7 +131,7 @@ knn_final <- predictions3 %>%
   select(c(shot_id, shot_made_flag))
 
 write.csv(knn_final, "./STAT\ 348/FinalProject/knn.csv", row.names = F)
-
+?nearest_neighbor
 ## xgboost
 boost_model <- boost_tree(tree_depth=tune(),
                           trees=tune(),

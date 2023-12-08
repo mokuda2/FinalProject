@@ -8,11 +8,14 @@ library(kknn)
 library(kernlab)
 library(themis)
 
+# Read data
 kobe <- vroom("./data.csv")
+
+# Get distances
 dist <- sqrt((kobe$loc_x/10)^2 + (kobe$loc_y/10)^2) 
 kobe$shot_distance <- dist
 
-#Creating angle column 
+# Creating angle column 
 loc_x_zero <- kobe$loc_x == 0
 kobe['angle'] <- rep(0,nrow(kobe))
 kobe$angle[!loc_x_zero] <- atan(kobe$loc_y[!loc_x_zero] / kobe$loc_x[!loc_x_zero])
@@ -29,6 +32,7 @@ kobe['season'] <- substr(str_split_fixed(kobe$season, '-',2)[,2],2,2)
 
 # period into a factor
 kobe$period <- as.factor(kobe$period)
+
 # delete columns
 kobe <- kobe %>%
   select(-c('shot_id', 'team_id', 'team_name', 'shot_zone_range', 'lon', 'lat', 
@@ -44,7 +48,7 @@ train <- kobe %>%
 test <- kobe %>% 
   filter(is.na(shot_made_flag))
 
-## Make the response variable into a factor 
+# Make the response variable into a factor 
 train$shot_made_flag <- as.factor(train$shot_made_flag)
 
 # recipe
@@ -93,18 +97,59 @@ final_wf <- kobe_wf %>%
 predictions <- final_wf %>%
   predict(new_data = test, type="prob")
 
+sample_submission <- vroom("./sample_submission.csv")
+
 predictions$shot_made_flag <- predictions$.pred_1
-predictions$shot_id <- test$shot_id
+predictions$shot_id <- sample_submission$shot_id
 kobe_final <- predictions %>%
   select(c(shot_id, shot_made_flag))
 
-write.csv(kobe_final, "./rfclassification.csv", row.names = F)
+write.csv(kobe_final, "./submission.csv", row.names = F)
+
+## knn
+# knn_model <- nearest_neighbor(neighbors=tune()) %>%
+#   set_mode("classification") %>%
+#   set_engine("kknn")
+# 
+# knn_wf <- workflow() %>%
+#   add_recipe(recipe) %>%
+#   add_model(knn_model)
+# 
+# # Fit or Tune Model HERE
+# tuning_grid3 <- grid_regular(neighbors(),
+#                              levels = 5)
+# 
+# folds3 <- vfold_cv(train, v = 5, repeats=1)
+# 
+# CV_results3 <- knn_wf %>%
+#   tune_grid(resamples=folds3,
+#             grid=tuning_grid3,
+#             metrics=metric_set(roc_auc))
+# 
+# # Predict
+# bestTune3 <- CV_results3 %>%
+#   select_best("roc_auc")
+# 
+# # Finalize workflow and predict
+# final_wf3 <- knn_wf %>%
+#   finalize_workflow(bestTune3) %>%
+#   fit(data=train)
+# 
+# predictions3 <- final_wf3 %>%
+#   predict(new_data = test, type="prob")
+# 
+# predictions3$shot_made_flag <- predictions3$.pred_1
+# predictions3$shot_id <- test$shot_id
+# knn_final <- predictions3 %>%
+#   select(c(shot_id, shot_made_flag))
+# 
+# write.csv(knn_final, "./knn.csv", row.names = F)
 
 ## xgboost
 # boost_model <- boost_tree(tree_depth=tune(),
 #                           trees=tune(),
 #                           learn_rate=tune()) %>%
-#   set_engine("lightgbm") %>% #or "xgboost" but lightgbm is faster
+#   set_engine("lightgbm") %>%
 #   set_mode("classification")
 # 
 # boost_wf <- workflow() %>%
@@ -115,7 +160,7 @@ write.csv(kobe_final, "./rfclassification.csv", row.names = F)
 # tuning_grid2 <- grid_regular(tree_depth(),
 #                              trees(),
 #                              learn_rate(),
-#                              levels = 5) ## L^2 total tuning possibilities
+#                              levels = 5)
 # 
 # folds2 <- vfold_cv(data_train_final, v = 5, repeats=1)
 # 
